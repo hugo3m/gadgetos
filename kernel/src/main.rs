@@ -1,17 +1,25 @@
 #![no_std]
 #![no_main]
+#![feature(naked_functions)]
 
-use bootloader_api::{entry_point, info::FrameBuffer, BootInfo};
 mod display;
 mod interrupts;
 
-/// Specify main function not existing
+use bootloader_api::{entry_point, info::FrameBuffer, BootInfo};
 use core::panic::PanicInfo;
+use interrupts::idt::IDT;
 
 /// Function acting as panic handler
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
+}
+
+fn load_idt() {
+    unsafe {
+        IDT.init();
+        IDT.load();
+    }
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
@@ -28,17 +36,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
         stride,
     );
     let mut char_writter = display::char_writter::CharWritter::new(framebufferwritter);
-    char_writter.clear();
-    for i in 0..50 {
-        if i % 2 == 0 {
-            char_writter.write_string("HUGO");
-        }
-        if i % 2 == 1 {
-            char_writter.write_string("LUCAS");
-        }
-        char_writter.newline();
-    }
-
+    load_idt();
     loop {}
 }
 

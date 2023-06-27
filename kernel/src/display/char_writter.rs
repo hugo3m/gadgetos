@@ -11,13 +11,13 @@ const LETTER_SPACING: usize = 0;
 const BORDER_PADDING: usize = 1;
 // Height of each char raster. The font size is ~0.84% of this. Thus, this is the line height that
 // enables multiple characters to be side-by-side and appear optically in one line in a natural way.
-pub const CHAR_RASTER_HEIGHT: RasterHeight = RasterHeight::Size16;
+const CHAR_RASTER_HEIGHT: RasterHeight = RasterHeight::Size16;
 // The width of each single symbol of the mono space font.
-pub const CHAR_RASTER_WIDTH: usize = get_raster_width(FontWeight::Regular, CHAR_RASTER_HEIGHT);
+const CHAR_RASTER_WIDTH: usize = get_raster_width(FontWeight::Regular, CHAR_RASTER_HEIGHT);
 // Backup character if a desired symbol is not available by the font.
-pub const BACKUP_CHAR: char = '�';
+const BACKUP_CHAR: char = '�';
 // Characters font weight
-pub const FONT_WEIGHT: FontWeight = FontWeight::Regular;
+const FONT_WEIGHT: FontWeight = FontWeight::Regular;
 
 /// Returns the raster of the given char or the raster of BACKUP_CHAR.
 ///
