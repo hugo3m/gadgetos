@@ -1,7 +1,32 @@
+use crate::println;
 use core::arch::asm;
 
 #[no_mangle]
 pub extern "C" fn exception_handler(int: u32, eip: u32, cs: u32, eflags: u32) {
+    match int {
+        0x00 => {
+            println!("DIVISION ERROR!");
+        }
+        0x06 => {
+            println!("INVALID OPCODE!");
+        }
+        0x08 => {
+            println!("DOUBLE FAULT!");
+        }
+        0x0D => {
+            println!("GENERAL PROTECTION FAULT!");
+        }
+        0x0E => {
+            println!("PAGE FAULT!");
+        }
+        0xFF => {
+            println!("EXCEPTION!");
+        }
+        _ => {
+            println!("EXCEPTION!");
+        }
+    }
+    println!("EIP: {:X}, CS: {:X}, EFLAGS: {:b}", eip, cs, eflags);
     loop {}
 }
 

@@ -1,6 +1,17 @@
 /// Structure for writing pixels in the framebuffer.
 /// It should be the only object writing in the framebuffer.
 /// References: https://github.com/rust-osdev/bootloader/blob/main/common/src/framebuffer.rs
+use lazy_static::lazy_static;
+use once_cell::unsync::OnceCell;
+use spin::Mutex;
+
+lazy_static! {
+    /// The global frame buffer writter instance.
+    pub static ref FRAMEBUFFER_WRITER: Mutex<OnceCell<FrameBufferWriter>> =
+        Mutex::new(OnceCell::new());
+}
+
+#[derive(Debug)]
 pub struct FrameBufferWriter {
     /// framebuffer physical address
     framebuffer: &'static mut [u8],
@@ -23,7 +34,7 @@ impl FrameBufferWriter {
     /// * `height`: display height
     /// * `bytes_per_pixel`: number of bytes per pixel
     /// * `pitch`: vertical space between pixels
-    pub fn new(
+    pub fn init(
         framebuffer: &'static mut [u8],
         width: usize,
         height: usize,
@@ -38,6 +49,7 @@ impl FrameBufferWriter {
             pitch,
         }
     }
+
     /// Returns display width.
     pub fn width(&self) -> usize {
         self.width

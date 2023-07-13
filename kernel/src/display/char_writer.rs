@@ -1,7 +1,17 @@
-use crate::display::framebuffer_writter::FrameBufferWriter;
+use crate::display::framebuffer_writter::FRAMEBUFFER_WRITER;
+use lazy_static::lazy_static;
 use noto_sans_mono_bitmap::{
     get_raster, get_raster_width, FontWeight, RasterHeight, RasterizedChar,
 };
+use spin::Mutex;
+
+lazy_static! {
+    /// The global frame buffer writter instance.
+    pub static ref CHAR_WRITER: Mutex<CharWriter> = Mutex::new(CharWriter {
+        x_width: BORDER_PADDING,
+        y_height: BORDER_PADDING,
+    });
+}
 
 // Vertical space between lines.
 const LINE_SPACING: usize = 2;
@@ -30,33 +40,26 @@ fn get_char_raster(c: char) -> RasterizedChar {
     get(c).unwrap_or_else(|| get(BACKUP_CHAR).unwrap())
 }
 /// Structure used to write char on the display.
-pub struct CharWritter {
-    // FrameBufferWritter to write pixels on display
-    framebuffer_writter: FrameBufferWriter,
+pub struct CharWriter {
     // X position on width
     x_width: usize,
     // Y position on height
     y_height: usize,
 }
 
-impl CharWritter {
-    /// Returns a new CharWritter.
-    ///
-    /// ## Arguments
-    /// * `framebuffer_writter`: framebufferwritter object
-    pub fn new(framebuffer_writter: FrameBufferWriter) -> Self {
-        Self {
-            framebuffer_writter,
-            x_width: BORDER_PADDING,
-            y_height: BORDER_PADDING,
-        }
-    }
+impl CharWriter {
     /// Clear the display by setting all pixels to black.
     pub fn clear(&mut self) {
+        let width = FRAMEBUFFER_WRITER.lock().get().unwrap().width();
+        let height = FRAMEBUFFER_WRITER.lock().get().unwrap().height();
         // Set pixels to black
-        for i in 0..self.framebuffer_writter.width() {
-            for j in 0..self.framebuffer_writter.height() {
-                self.framebuffer_writter.write_pixel(i, j, [0, 0, 0]);
+        for i in 0..width {
+            for j in 0..height {
+                FRAMEBUFFER_WRITER
+                    .lock()
+                    .get_mut()
+                    .unwrap()
+                    .write_pixel(i, j, [0, 0, 0]);
             }
         }
         // Set position to top left
@@ -70,12 +73,11 @@ impl CharWritter {
     /// Jump to a new line.
     /// When jumping above the height of the screen, clear the screen.
     pub fn newline(&mut self) {
+        let height = FRAMEBUFFER_WRITER.lock().get().unwrap().height();
         // Increment y position
         self.y_height += CHAR_RASTER_HEIGHT.val() + LINE_SPACING;
         // If position is above the height limit
-        if (self.y_height + CHAR_RASTER_HEIGHT.val() + BORDER_PADDING)
-            >= self.framebuffer_writter.height()
-        {
+        if (self.y_height + CHAR_RASTER_HEIGHT.val() + BORDER_PADDING) >= height {
             // Clear the screen
             self.clear()
         }
@@ -84,6 +86,7 @@ impl CharWritter {
     }
     /// Write a char.
     fn write_char(&mut self, c: char) {
+        let width = FRAMEBUFFER_WRITER.lock().get().unwrap().width();
         match c {
             '\n' => self.newline(),
             '\r' => self.carriage_return(),
@@ -91,7 +94,7 @@ impl CharWritter {
                 // Calculate new X position
                 let next_x_width = self.x_width + CHAR_RASTER_WIDTH;
                 // If above the screen width
-                if next_x_width >= self.framebuffer_writter.width() {
+                if next_x_width >= width {
                     // Process new line
                     self.newline()
                 }
@@ -107,7 +110,7 @@ impl CharWritter {
             // For each pixel of the char
             for (x, byte) in row.iter().enumerate() {
                 // Write the pixel
-                self.framebuffer_writter.write_pixel(
+                FRAMEBUFFER_WRITER.lock().get_mut().unwrap().write_pixel(
                     self.x_width + x,
                     self.y_height + y,
                     [*byte, *byte, *byte],
